@@ -1,0 +1,156 @@
+---
+title: "Automotor Industry Trends"
+author: "Francisco Mimica Porras"
+date: "4/8/2021"
+output: html_document
+---
+
+# Summary Report
+
+This study is focused on the automobile industry regarding  MPG and type of transmission. General Objective: Exploratory analysis between a set of aspects of automobile design and miles per gallon (MPG). Specific objective: Identify and quantify if there are difference on MPG performance by type of transmission. Methodology: Outcome is miles per gallon (MPG). Data Analysis: T-Test, correlation and lineal univariable and multivariable models.Conclusion: The average of MPG between type of transmission is statistical different between Automatic and Manual Transmissions being Automatic transmission better on MPG performance. 
+
+# Data Preprocessing
+
+## Loading Data
+
+```{r}
+data("mtcars")
+Mtcars_cars <- mtcars
+cbind(dim(mtcars),dim(Mtcars_cars))
+```
+Data set is contained by 32 observations and 11 variables. 
+*Variables definitions (See Appendix)
+
+## Cleaning Data
+
+Removing predictors with high missing value rate
+
+```{r}
+na_col_mtcars <- sapply(Mtcars_cars, function(x) mean(is.na(x))) > 0.95 # threshold is 95%
+Mtcars_cars <- Mtcars_cars[,na_col_mtcars == FALSE]
+dim(Mtcars_cars)
+```
+Data set doesn't have variables with missing values.
+
+# Exploratory Analysis
+
+1) Identify if the predictors are correlated with the outcome (MPG). This is important to understand the possible type of relationship between explanatory variables and outcome.
+
+```{r}
+levels(Mtcars_cars$am)=as.numeric(c(1,0))
+Mtcars_cars$am=as.numeric(Mtcars_cars$am)
+levels(Mtcars_cars$vs)=as.numeric(c(1,2))
+Mtcars_cars$vs=as.numeric(Mtcars_cars$vs)
+levels(Mtcars_cars$cyl)=as.numeric(c(4,6,8))
+Mtcars_cars$cyl=as.numeric(Mtcars_cars$cyl)
+d <- Mtcars_cars
+cr <- cor(d)
+cor1 <- cor(d, method= "spearman")
+cor1[,1]
+```
+According with the correlation between explanatory variables and outcome (MPG), we can see that number of cylinders, displacement, horsepower and weight are highly negative correlated with the MPG. 
+
+2) Identify Average Difference of MPG between Automatic and Manual Transmissions.
+
+```{r}
+Mtcars_cars$am=as.factor(Mtcars_cars$am)
+levels(Mtcars_cars$am)=c("AT","MT") #AT= Automatic Transmission MT= Manual Transmission
+Mtcars_cars$vs=as.factor(Mtcars_cars$vs)
+levels(Mtcars_cars$vs)=c("V-Shaped","ST")
+atmpg<-Mtcars_cars[Mtcars_cars$am == "AT",]
+mtmpg<-Mtcars_cars[Mtcars_cars$am == "MT",]
+t.test(mtmpg$mpg,atmpg$mpg, "greater")
+```
+According with T-test, the average of MPG performance between type of transmission is statistical different between Automatic and Manual Transmissions being Automatic transmission better on MPG performance. 
+
+# Model Selection
+
+## Formating
+
+```{r}
+Mtcars_cars$am=as.factor(Mtcars_cars$am)
+levels(Mtcars_cars$am)=c("AT","MT")
+Mtcars_cars$vs=as.factor(Mtcars_cars$vs)
+levels(Mtcars_cars$vs)=c("V-Shaped","ST")
+Mtcars_cars$cyl=as.factor(Mtcars_cars$cyl)
+levels(Mtcars_cars$cyl)=c("4", "6","8")
+Mtcars_cars$gear=as.factor(Mtcars_cars$gear)
+levels(Mtcars_cars$gear)=c("3","4", "5")
+Mtcars_cars$carb=as.factor(Mtcars_cars$carb)
+levels(Mtcars_cars$carb)=c("1","2","3","4","6","8")
+```
+
+1) Model1: This model will just include type of transmission as explanatory variable. This model will show how much this variable can explain the variability on MPG. Outcome=MPG 
+
+```{r}
+Model1<- lm(mpg~am, data=Mtcars_cars)
+summary(Model1)
+```
+*Model1. Am is able to explain in a 33.8% of MPG variably.
+
+2)Model2: It includes all strongly correlated explanatory variables with the outcome (According with Correlation analysis).
+
+```{r}
+Model2<- lm(mpg~cyl+disp+hp+wt+vs+am, data=Mtcars_cars)
+summary(Model2)
+```
+*Model2 is able to explain in a 83.59% of MPG variably being horsepower and wt are statistically significant explaining the MPG variability as predictors. 
+
+3)Model3: Full model includes all explanatory variables. Outcome=MPG.
+
+```{r}
+Model3<- lm(mpg~., data=Mtcars_cars)
+summary(Model3)
+```
+*Model3 is able to explain in a 77.9% of MPG variably being horsepower and wt are statistically significant explaining the MPG variability as predictors. 
+
+4)Model4: Full model includes all explanatory variables.Selection Model= 'Step'. Outcome=MPG.
+
+```{r}
+Model4 <-step(lm(mpg~., data = Mtcars_cars))
+summary(Model4)
+```
+*Model4 is able to explain in a 84.01% of MPG variably being number of cylinders, horsepower and weight are statistically significant explaining the MPG variability as predictors. Horsepower and weight are decreasing MPG performance significantly as well as Cy6 comparing with Cy4.  
+
+# Model Examination
+
+Model4 is the best model. It's able to explain in a 84.01% of MPG variably.(See Appendix: Residual Analysis)
+
+# Conclusion
+
+There is a statistically significant difference on MPG by type of transmissions (SEE T-test result).The average of MPG between type of transmission is statistical different between Automatic and Manual Transmissions being Automatic transmission better on MPG performance. In addition, the Model4 ("Step" Selection Model) is suggesting that weigh, horsepower and number of cylinders are statistically significant and predict better the variability of MPG on 84%. 
+# Appendix
+
+## Data Definitions
+
+mpg	Miles/(US) gallon
+cyl	Number of cylinders
+disp	Displacement (cu.in.)
+hp	Gross horsepower
+drat	Rear axle ratio
+wt	Weight (1000 lbs)
+qsec	1/4 mile time
+vs	Engine (1 = V-shaped, 2 = straight)
+am	Transmission (0 = automatic, 1 = manual)
+gear	Number of forward gears
+
+## Exploratory Analysis
+
+1) Identify if the predictors are correlated with the outcome (MPG).
+```{r}
+library(corrplot)
+corrplot(cr, method = "pie", type = "lower")
+```
+2) Identify Average Difference of MPG between Automatic and Manual Transmissions.
+```{r}
+boxplot(mpg ~ am, Mtcars_cars, xlab = "Transmission", ylab = "MPG")
+```
+
+## Model Examination
+
+Final Model Plot: Model4. Residual Analysis
+
+```{r}
+layout(matrix(c(1,2,3,4),2,2))
+plot(Model4)
+```
