@@ -1,0 +1,165 @@
+---
+title: "Automotor Industry Trends"
+author: "Francisco Mimica Porras"
+date: "3/27/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Introduction 
+
+You work for Motor Trend, a magazine about the automobile industry. Looking at a data set of a collection of cars, they are interested in exploring the relationship between a set of variables and miles per gallon (MPG) (outcome). They are particularly interested in the following two questions:
+
+Is an automatic or manual transmission better for MPG
+"Quantify the MPG difference between automatic and manual transmissions"  
+
+Question
+
+Take the mtcars data set and write up an analysis to answer their question using regression models and exploratory data analyses.
+
+Your report must be:
+
+Written as a PDF printout of a compiled (using knitr) R markdown document.
+Brief. Roughly the equivalent of 2 pages or less for the main text. Supporting figures in an appendix can be included up to 5 total pages including the 2 for the main report. The appendix can only include figures.
+Include a first paragraph executive summary.
+
+#Data Format
+
+mpg	Miles/(US) gallon
+cyl	Number of cylinders
+disp	Displacement (cu.in.)
+hp	Gross horsepower
+drat	Rear axle ratio
+wt	Weight (1000 lbs)
+qsec	1/4 mile time
+vs	Engine (1 = V-shaped, 2 = straight)
+am	Transmission (0 = automatic, 1 = manual)
+gear	Number of forward gears
+
+
+## Data Processing 
+
+```{r}
+data("mtcars")
+head(mtcars)
+summary(mtcars)
+str(mtcars)
+mtcars$am=as.factor(mtcars$am)
+levels(mtcars$am)=c("AT","MT")
+mtcars$vs=as.factor(mtcars$vs)
+levels(mtcars$vs)=c("V-Shaped","ST")
+```
+
+
+## Plotting 
+
+### Retionship between MPG and Type of Transmission
+
+```{r}
+boxplot(mpg ~ am, mtcars, xlab = "Transmission", ylab = "MPG")
+
+atmpg<-mtcars[mtcars$am == "AT",]
+mtmpg<-mtcars[mtcars$am == "MT",]
+t.test(mtmpg$mpg,atmpg$mpg, "greater")
+
+par(mfrow = c(2, 1), mar = c(4, 4, 2, 1))
+hist(subset(mtcars, am == "AT")$mpg, col = "green")
+abline(v = 17.14, col = "magenta", lwd = 4)
+hist(subset(mtcars, am=="MT")$mpg, col= "red")
+abline(v = 24.39, col = "magenta", lwd = 4)
+
+
+```
+
+
+### Retionship between MPG and Number of Cylinders.
+
+```{r}
+library(lattice)
+mtcars<- transform(mtcars, cyl = factor(cyl))
+xyplot(mpg ~ am | cyl, data = mtcars, layout = c(3,1))
+
+
+cyl4mpg<- mtcars[mtcars$cyl=="4",]
+cyl6mpg<- mtcars[mtcars$cyl=="6",]
+cyl8mpg<- mtcars[mtcars$cyl=="8",]
+t.test(cyl4mpg$mpg,cyl6mpg$mpg, "greater")
+t.test(cyl4mpg$mpg,cyl8mpg$mpg, "greater")
+t.test(cyl6mpg$mpg,cyl8mpg$mpg, "greater")
+
+```
+
+### Correlation and Full model.
+
+### Full Correlation
+
+```{r}
+
+levels(mtcars$am)=as.numeric(c(1,0))
+mtcars$am=as.numeric(mtcars$am)
+levels(mtcars$vs)=as.numeric(c(1,2))
+mtcars$vs=as.numeric(mtcars$vs)
+levels(mtcars$cyl)=as.numeric(c(4,6,8))
+mtcars$cyl=as.numeric(mtcars$cyl)
+
+d <- mtcars
+cr <- cor(d)
+cor1 <- cor(d, method = "kendall")
+cor2 <- cor(d, method= "spearman")
+
+
+library(corrplot)
+
+corrplot(cr, method = "pie", type = "lower")
+
+```
+
+
+### Full Model.
+
+```{r}
+mtcars$am=as.factor(mtcars$am)
+levels(mtcars$am)=c("AT","MT")
+mtcars$vs=as.factor(mtcars$vs)
+levels(mtcars$vs)=c("V-Shaped","ST")
+mtcars$cyl=as.factor(mtcars$cyl)
+levels(mtcars$cyl)=c("4", "6","8")
+mtcars$gear=as.factor(mtcars$gear)
+levels(mtcars$gear)=c("3","4", "5")
+mtcars$carb=as.factor(mtcars$carb)
+levels(mtcars$carb)=c("1","2","3","4","6","8")
+
+
+Model1<- lm(mpg~., data=mtcars)
+summary(Model1)
+summary(Model1)$coef
+par(mfrow = c(2,2), mar = c(4, 4, 2, 1))
+plot(Model1)
+
+Model2<-lm(mpg ~ wt + qsec + am + wt:am, data=mtcars)
+summary(Model2)
+summary(Model2)$coef
+par(mfrow = c(2,2), mar = c(4, 4, 2, 1))
+plot(Model2)
+
+Model3 <-step(lm(mpg~., data = mtcars))
+summary(Model3)
+summary(Model3)$coef
+par(mfrow = c(2,2), mar = c(4, 4, 2, 1))
+plot(Model3)
+
+Model4 <-lm(mpg ~ wt + qsec + am + cyl + wt:am + am:cyl, data=mtcars)
+summary(Model4)
+summary(Model4)$coef
+par(mfrow = c(2,2), mar = c(4, 4, 2, 1))
+plot(Model4)
+
+
+```
+
+#Conclusion
+
+There is a difference on MPG among type of transmissions. That difference on MPG performance is more clear when is graphed by number of cylinders and type of transmissions. However, the Step Full Model estimated is suggesting that weigh, qsec and number of transmissions are statistically significant  and predict better the variability of MPG on 88%. 
